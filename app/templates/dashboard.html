@@ -5,7 +5,7 @@
   :root{color-scheme:light;
     --plane:#f4f4f1;--surface:#fff;--surface-2:#faf9f6;--ink:#10100f;--ink-2:#54534e;--muted:#8b8a83;
     --line:#e6e5de;--line-2:#d7d6cd;--accent:#2a78d6;--accent-soft:#e7f0fc;
-    --s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--ok:#0ca30c;--ok-ink:#006300;--warn:#fab219;--muted-b:#8b8a83;
+    --s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--ok:#0ca30c;--ok-ink:#006300;--warn:#fab219;
     --r:12px;--font:system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif}
   @media (prefers-color-scheme:dark){:root:not([data-theme=light]){color-scheme:dark;
     --plane:#0d0d0c;--surface:#1a1a19;--surface-2:#222220;--ink:#f0efec;--ink-2:#bdbcb3;--muted:#8f8e86;
@@ -33,25 +33,32 @@
   .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-top:16px}
   .card-hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 16px;border-bottom:1px solid var(--line)}
   .card-hd h2{font-size:14px;margin:0;font-weight:700}.meta{font-size:12px;color:var(--muted)}
+  /* 보기 전환 토글 */
+  .viewtog{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .vt{font:inherit;font-size:12px;border:0;background:var(--surface);color:var(--ink-2);padding:6px 12px;cursor:pointer}
+  .vt+.vt{border-left:1px solid var(--line)}.vt.on{background:var(--accent);color:#fff}
   .legend{display:flex;gap:7px;flex-wrap:wrap;margin-left:auto}
   .chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer;user-select:none}
   .chip .sw{width:10px;height:10px;border-radius:3px}.chip[aria-pressed=false]{opacity:.4}.chip[aria-pressed=false] .sw{background:var(--muted)!important}
   .bd{padding:16px}
-  /* --- 차트 + 호버 툴팁 --- */
+  /* 차트 + 좌우 스크롤 + 호버 툴팁 */
   .chart-wrap{position:relative}
-  svg.chart{display:block;width:100%;height:auto;overflow:visible}
+  .chart-scroll{overflow-x:auto;overflow-y:hidden}
+  svg.chart{display:block;height:auto}
   .grid line{stroke:var(--line)}.axis text{fill:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
+  .axis .mark{fill:var(--ink-2);font-weight:600}
   .serie{fill:none;stroke-width:2}.mk{stroke:var(--surface);stroke-width:2}
   .crosshair{stroke:var(--line-2);stroke-width:1;stroke-dasharray:3 3}
-  .tt{position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-108%);transition:opacity .08s;
-    background:var(--ink);color:var(--surface);border-radius:9px;padding:8px 11px;font-size:12px;min-width:132px;z-index:6;
+  .tt{position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-112%);transition:opacity .08s;
+    background:var(--ink);color:var(--surface);border-radius:9px;padding:8px 11px;font-size:12px;min-width:148px;z-index:6;
     box-shadow:0 8px 24px rgba(0,0,0,.2)}
-  .tt .d{font-weight:700;margin-bottom:6px;font-size:11.5px;letter-spacing:.02em;opacity:.85}
+  .tt .d{font-weight:700;margin-bottom:6px;font-size:11.5px;letter-spacing:.02em;opacity:.85;white-space:nowrap}
   .tt .row{display:flex;align-items:center;gap:8px;margin:3px 0}
   .tt .row .sw{width:9px;height:9px;border-radius:2px;flex:none}
   .tt .row .nm{opacity:.82;white-space:nowrap}
   .tt .row .vv{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
-  /* --- 표 --- */
+  .chart-hint{font-size:11px;color:var(--muted);margin-left:10px}
+  /* 표 */
   .table-scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:820px}
   thead th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600;background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
   td{padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:top}tbody tr:hover{background:var(--surface-2)}
@@ -80,7 +87,6 @@
   .pg[aria-current=true]{background:var(--accent);color:#fff;border-color:transparent}.pg:disabled{opacity:.4}
   select{height:32px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:0 8px;font-family:var(--font)}
   .note{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.5}
-  .warn-banner{margin-top:16px;padding:11px 14px;border-radius:10px;background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--ink-2);font-size:12.5px;border:1px solid color-mix(in srgb,var(--warn) 40%,transparent)}
   @media (max-width:760px){.tiles{grid-template-columns:repeat(2,1fr)}.legend{margin-left:0;width:100%}}
 </style></head><body>
 <header><div class="hd">
@@ -93,7 +99,6 @@
   </div>
 </div></header>
 <div class="wrap">
-  <div id="expbanner"></div>
   <div class="tiles">
     <div class="tile"><div class="lab">Tracked Documents</div><div class="val" id="k-tracked">—</div><div class="sub2">PDF A·B·C·D</div></div>
     <div class="tile"><div class="lab">Total Requests</div><div class="val" id="k-total">—</div><div class="sub2">누적 추적 URL 요청</div></div>
@@ -101,13 +106,23 @@
     <div class="tile"><div class="lab">Last Access</div><div class="val vs" id="k-last">—</div><div class="sub2">Asia/Seoul</div></div>
   </div>
   <div class="card">
-    <div class="card-hd"><h2>일자별 추적 URL 요청</h2><span class="meta">최근 14일 · KST</span><div class="legend" id="legend"></div></div>
+    <div class="card-hd">
+      <h2>추적 URL 요청</h2>
+      <div class="viewtog">
+        <button class="vt on" data-v="day">일자별</button>
+        <button class="vt" data-v="hour">시간별(2h)</button>
+      </div>
+      <span class="meta" id="chartmeta">최근 14일 · KST</span>
+      <div class="legend" id="legend"></div>
+    </div>
     <div class="bd">
       <div class="chart-wrap">
-        <svg class="chart" id="chart" viewBox="0 0 860 320" role="img" aria-label="일자별 PDF 요청 추이"></svg>
+        <div class="chart-scroll">
+          <svg class="chart" id="chart" role="img" aria-label="추적 URL 요청 추이"></svg>
+        </div>
         <div class="tt" id="tt"></div>
       </div>
-      <p class="note">범례를 눌러 특정 PDF만 표시/숨김. 그래프 위에 마우스를 올리면 해당 날짜의 문서별 요청 건수가 표시됩니다.</p>
+      <p class="note">범례를 눌러 특정 PDF만 표시/숨김. 그래프에 마우스를 올리면 해당 구간의 문서별 건수가 표시됩니다. 시간별 보기는 최근 48시간을 2시간 단위로 나눠 보여주며, 데이터가 많으면 좌우로 스크롤할 수 있습니다.</p>
     </div>
   </div>
   <div class="card">
@@ -134,7 +149,8 @@
 </div>
 <script>
 const COLORS={A:"var(--s1)",B:"var(--s2)",C:"var(--s3)",D:"var(--s4)"};
-let STATS=null, active={A:1,B:1,C:1,D:1}, page=1, size=20;
+const DOW="일월화수목금토";
+let STATS=null, active={A:1,B:1,C:1,D:1}, page=1, size=20, view="day", hourly=null;
 const selected=new Set();
 const $=id=>document.getElementById(id);
 function fmt(n){return (n||0).toLocaleString("en-US")}
@@ -143,10 +159,7 @@ async function loadStats(){
   const r=await fetch("/admin/api/stats"); if(!r.ok)return; STATS=await r.json();
   $("k-tracked").textContent=STATS.tracked; $("k-total").textContent=fmt(STATS.total);
   $("k-today").textContent=fmt(STATS.today); $("k-last").textContent=STATS.last;
-  $("expbanner").innerHTML = STATS.expired
-    ? '<div class="warn-banner">추적 기간이 만료되었습니다. 신규 이벤트는 더 이상 기록되지 않습니다.</div>'
-    : '<div class="warn-banner">추적 종료 예정일: '+STATS.expires_kst+' (KST) · 이후 자동으로 기록 중지</div>';
-  buildLegend(); drawChart();
+  buildLegend(); await refreshChart();
 }
 function buildLegend(){
   const el=$("legend"); el.innerHTML="";
@@ -157,55 +170,110 @@ function buildLegend(){
     el.appendChild(b);
   });
 }
-function drawChart(){
-  const NS="http://www.w3.org/2000/svg", svg=$("chart"), tt=$("tt"); svg.textContent=""; tt.style.opacity=0;
-  const W=860,H=320,m={t:16,r:16,b:30,l:38},iw=W-m.l-m.r,ih=H-m.t-m.b;
+// 시간별(2h) 데이터: 로그 이벤트를 프론트에서 48시간/2시간 버킷으로 집계
+async function buildHourly(){
+  const SLOT=2*3600*1000, N=24;
+  const f=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false});
+  const o={}; f.formatToParts(new Date()).forEach(p=>o[p.type]=p.value);
+  const curStart=Date.UTC(+o.year,+o.month-1,+o.day,Math.floor(+o.hour/2)*2,0,0);
+  const oldest=curStart-(N-1)*SLOT;
+  const ser={A:Array(N).fill(0),B:Array(N).fill(0),C:Array(N).fill(0),D:Array(N).fill(0)};
+  let pg=1,guard=0;
+  while(guard++<300){
+    const r=await fetch("/admin/api/events?page="+pg+"&size=50"); if(!r.ok)break;
+    const d=await r.json(); if(!d.items||!d.items.length)break;
+    let minMs=Infinity;
+    d.items.forEach(e=>{
+      const P=e.time.split(/[-: ]/).map(Number);
+      const ms=Date.UTC(P[0],P[1]-1,P[2],P[3],P[4],P[5]||0);
+      if(ms<minMs)minMs=ms;
+      const idx=Math.floor((ms-oldest)/SLOT);
+      if(idx>=0&&idx<N&&ser[e.doc_label])ser[e.doc_label][idx]++;
+    });
+    if(minMs<oldest)break;
+    if(pg*50>=d.total)break;
+    pg++;
+  }
+  const labels=[],marks=[],heads=[];
+  for(let i=0;i<N;i++){
+    const t=oldest+i*SLOT, dt=new Date(t), h=dt.getUTCHours(), mo=dt.getUTCMonth()+1, da=dt.getUTCDate();
+    labels.push(String(h).padStart(2,"0"));
+    marks.push((h===0||i===0)?mo+"/"+da:null);
+    heads.push(mo+"/"+da+" "+String(h).padStart(2,"0")+":00–"+String((h+2)%24).padStart(2,"0")+":00");
+  }
+  hourly={labels,marks,heads,series:ser,n:N};
+}
+async function refreshChart(){ if(view==="hour") await buildHourly(); drawChart(); }
+
+function getChartData(){
+  const shown=STATS?STATS.docs.filter(d=>active[d.label]):[];
+  if(view==="hour"){
+    if(!hourly)return null;
+    return {n:hourly.n,labels:hourly.labels,marks:hourly.marks,heads:hourly.heads,series:hourly.series,shown};
+  }
   const keys=STATS.day_keys, n=keys.length;
-  const shown=STATS.docs.filter(d=>active[d.label]);
-  let mx=1; shown.forEach(d=>STATS.series[d.label].forEach(v=>{if(v>mx)mx=v}));
+  return {n,
+    labels:keys.map(k=>{const p=k.split("-");return (+p[1])+"/"+(+p[2]);}),
+    marks:keys.map(()=>null),
+    heads:keys.map(k=>{const p=k.split("-");return (+p[1])+"/"+(+p[2])+" ("+DOW[new Date(k+"T00:00:00").getDay()]+")";}),
+    series:STATS.series,shown};
+}
+function drawChart(){
+  const NS="http://www.w3.org/2000/svg", svg=$("chart"), tt=$("tt"), wrap=svg.closest(".chart-wrap");
+  svg.textContent=""; tt.style.opacity=0;
+  const data=getChartData();
+  const H=320, m={t:16,r:20,b:34,l:40};
+  if(!data){ svg.setAttribute("width",320);svg.setAttribute("height",H);return; }
+  const n=data.n, shown=data.shown;
+  const minSp=view==="hour"?48:60;
+  const box=svg.parentElement.clientWidth||860;
+  const W=Math.max(box, m.l+m.r+(n-1)*minSp+24);
+  const iw=W-m.l-m.r, ih=H-m.t-m.b;
+  svg.setAttribute("width",W); svg.setAttribute("height",H); svg.setAttribute("viewBox","0 0 "+W+" "+H);
+  let mx=1; shown.forEach(d=>data.series[d.label].forEach(v=>{if(v>mx)mx=v}));
   mx=Math.max(5,Math.ceil(mx/5)*5);
-  const xs=i=>m.l+(n<=1?0:i/(n-1)*iw), ys=v=>m.t+ih-v/mx*ih;
+  const xs=i=>m.l+(n<=1?iw/2:i/(n-1)*iw), ys=v=>m.t+ih-v/mx*ih;
   const g=document.createElementNS(NS,"g");g.setAttribute("class","grid");
   const ax=document.createElementNS(NS,"g");ax.setAttribute("class","axis");
   for(let t=0;t<=4;t++){const val=Math.round(mx*t/4),y=ys(val);
     const ln=document.createElementNS(NS,"line");ln.setAttribute("x1",m.l);ln.setAttribute("x2",m.l+iw);ln.setAttribute("y1",y);ln.setAttribute("y2",y);g.appendChild(ln);
     const tx=document.createElementNS(NS,"text");tx.setAttribute("x",m.l-8);tx.setAttribute("y",y+4);tx.setAttribute("text-anchor","end");tx.textContent=val;ax.appendChild(tx);}
-  keys.forEach((k,i)=>{if(i%2&&i!==n-1)return;const tx=document.createElementNS(NS,"text");tx.setAttribute("x",xs(i));tx.setAttribute("y",H-10);tx.setAttribute("text-anchor","middle");const p=k.split("-");tx.textContent=(+p[1])+"/"+(+p[2]);ax.appendChild(tx);});
+  data.labels.forEach((lab,i)=>{
+    if(i%2===0||i===n-1){const tx=document.createElementNS(NS,"text");tx.setAttribute("x",xs(i));tx.setAttribute("y",H-16);tx.setAttribute("text-anchor","middle");tx.textContent=lab;ax.appendChild(tx);}
+    if(data.marks[i]){const tx=document.createElementNS(NS,"text");tx.setAttribute("class","mark");tx.setAttribute("x",xs(i));tx.setAttribute("y",H-3);tx.setAttribute("text-anchor","middle");tx.textContent=data.marks[i];ax.appendChild(tx);}
+  });
   svg.appendChild(g);svg.appendChild(ax);
-  shown.forEach(d=>{const a=STATS.series[d.label];let dp="";a.forEach((v,i)=>dp+=(i?"L":"M")+xs(i).toFixed(1)+" "+ys(v).toFixed(1)+" ");
+  shown.forEach(d=>{const a=data.series[d.label];let dp="";a.forEach((v,i)=>dp+=(i?"L":"M")+xs(i).toFixed(1)+" "+ys(v).toFixed(1)+" ");
     const p=document.createElementNS(NS,"path");p.setAttribute("class","serie");p.setAttribute("d",dp);p.setAttribute("stroke",COLORS[d.label]);svg.appendChild(p);
     const c=document.createElementNS(NS,"circle");c.setAttribute("class","mk");c.setAttribute("cx",xs(n-1));c.setAttribute("cy",ys(a[n-1]));c.setAttribute("r",4);c.setAttribute("fill",COLORS[d.label]);svg.appendChild(c);});
 
-  // ---- 호버: 십자선 + 날짜별 건수 툴팁 ----
+  // 호버: 십자선 + 구간별 건수 툴팁
   const cross=document.createElementNS(NS,"line");cross.setAttribute("class","crosshair");
   cross.setAttribute("y1",m.t);cross.setAttribute("y2",m.t+ih);cross.style.opacity=0;svg.appendChild(cross);
   let dots=[];
   const ov=document.createElementNS(NS,"rect");ov.setAttribute("x",m.l);ov.setAttribute("y",m.t);
-  ov.setAttribute("width",iw);ov.setAttribute("height",ih);ov.setAttribute("fill","transparent");
-  ov.style.cursor="crosshair";svg.appendChild(ov);
+  ov.setAttribute("width",iw);ov.setAttribute("height",ih);ov.setAttribute("fill","transparent");ov.style.cursor="crosshair";svg.appendChild(ov);
   function move(ev){
     if(!shown.length)return;
-    const rect=svg.getBoundingClientRect();
-    const vx=(ev.clientX-rect.left)/rect.width*W;
-    let i=Math.round((vx-m.l)/iw*(n-1)); i=Math.max(0,Math.min(n-1,i));
+    const sr=svg.getBoundingClientRect(), wr=wrap.getBoundingClientRect();
+    let i=Math.round((ev.clientX-sr.left-m.l)/iw*(n-1)); i=Math.max(0,Math.min(n-1,i));
     const px=xs(i);
     cross.setAttribute("x1",px);cross.setAttribute("x2",px);cross.style.opacity=1;
     dots.forEach(x=>x.remove());dots=[];
-    let rows="",topY=ih+m.t;
-    shown.forEach(d=>{const v=STATS.series[d.label][i];
+    let rows="";
+    shown.forEach(d=>{const v=data.series[d.label][i];
       const c=document.createElementNS(NS,"circle");c.setAttribute("class","mk");c.setAttribute("cx",px);c.setAttribute("cy",ys(v));c.setAttribute("r",4.5);c.setAttribute("fill",COLORS[d.label]);svg.appendChild(c);dots.push(c);
-      if(ys(v)<topY)topY=ys(v);
       rows+='<div class="row"><span class="sw" style="background:'+COLORS[d.label]+'"></span><span class="nm">'+d.name+'</span><span class="vv">'+v+'</span></div>';});
-    const kp=keys[i].split("-");
-    tt.innerHTML='<div class="d">'+(+kp[1])+"/"+(+kp[2])+' ('+["일","월","화","수","목","금","토"][new Date(keys[i]+"T00:00:00").getDay()]+')</div>'+rows;
-    tt.style.left=(px/W*rect.width)+"px";
-    tt.style.top=(topY/H*rect.height)+"px";
+    tt.innerHTML='<div class="d">'+data.heads[i]+'</div>'+rows;
+    tt.style.left=(sr.left+px-wr.left)+"px";
+    tt.style.top=(ev.clientY-wr.top)+"px";
     tt.style.opacity=1;
   }
   function leave(){cross.style.opacity=0;tt.style.opacity=0;dots.forEach(x=>x.remove());dots=[];}
   ov.addEventListener("mousemove",move);ov.addEventListener("mouseleave",leave);
   ov.addEventListener("touchmove",e=>{if(e.touches[0])move(e.touches[0]);},{passive:true});
   ov.addEventListener("touchend",leave);
+  if(view==="hour") svg.parentElement.scrollLeft=W;   // 시간별은 최근 구간이 보이도록 오른쪽 끝으로
 }
 async function loadEvents(){
   const r=await fetch("/admin/api/events?page="+page+"&size="+size); if(!r.ok)return; const d=await r.json();
@@ -259,8 +327,17 @@ $("btn-delok").onclick=async()=>{
     selected.clear(); hideDel(); await loadStats(); await loadEvents();
   }catch(err){ $("delmsg").style.color="#d03b3b"; $("delmsg").textContent="네트워크 오류"; }
 };
+// 보기 전환
+document.querySelectorAll(".vt").forEach(b=>b.onclick=async()=>{
+  if(view===b.dataset.v)return;
+  view=b.dataset.v;
+  document.querySelectorAll(".vt").forEach(x=>x.classList.toggle("on",x===b));
+  $("chartmeta").textContent = view==="hour" ? "최근 48시간 · 2시간 단위 · KST" : "최근 14일 · KST";
+  await refreshChart();
+});
 $("ps").onchange=e=>{size=+e.target.value;page=1;loadEvents();};
 $("theme").onclick=()=>{const c=document.documentElement.getAttribute("data-theme");const dark=c?c==="dark":matchMedia("(prefers-color-scheme:dark)").matches;document.documentElement.setAttribute("data-theme",dark?"light":"dark");if(STATS)drawChart();};
+let rz; addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{if(STATS)drawChart();},150);});
 let cd=15;setInterval(()=>{cd--;if(cd<=0){cd=15; if(selected.size===0){loadStats();loadEvents();}}$("cd").textContent=cd;},1000);
 loadStats();loadEvents();
 </script></body></html>

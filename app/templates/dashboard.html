@@ -110,7 +110,7 @@
       <h2>추적 URL 요청</h2>
       <div class="viewtog">
         <button class="vt on" data-v="day">일자별</button>
-        <button class="vt" data-v="hour">시간별(2h)</button>
+        <button class="vt" data-v="hour">시간별(1h)</button>
       </div>
       <span class="meta" id="chartmeta">최근 14일 · KST</span>
       <div class="legend" id="legend"></div>
@@ -122,7 +122,7 @@
         </div>
         <div class="tt" id="tt"></div>
       </div>
-      <p class="note">범례를 눌러 특정 PDF만 표시/숨김. 그래프에 마우스를 올리면 해당 구간의 문서별 건수가 표시됩니다. 시간별 보기는 최근 48시간을 2시간 단위로 나눠 보여주며, 데이터가 많으면 좌우로 스크롤할 수 있습니다.</p>
+      <p class="note">범례를 눌러 특정 PDF만 표시/숨김. 그래프에 마우스를 올리면 해당 구간의 문서별 건수가 표시됩니다. 시간별 보기는 최근 48시간을 1시간 단위로 한 화면에 보여줍니다.</p>
     </div>
   </div>
   <div class="card">
@@ -172,10 +172,10 @@ function buildLegend(){
 }
 // 시간별(2h) 데이터: 로그 이벤트를 프론트에서 48시간/2시간 버킷으로 집계
 async function buildHourly(){
-  const SLOT=2*3600*1000, N=24;
+  const SLOT=3600*1000, N=48;
   const f=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false});
   const o={}; f.formatToParts(new Date()).forEach(p=>o[p.type]=p.value);
-  const curStart=Date.UTC(+o.year,+o.month-1,+o.day,Math.floor(+o.hour/2)*2,0,0);
+  const curStart=Date.UTC(+o.year,+o.month-1,+o.day,+o.hour,0,0);
   const oldest=curStart-(N-1)*SLOT;
   const ser={A:Array(N).fill(0),B:Array(N).fill(0),C:Array(N).fill(0),D:Array(N).fill(0)};
   let pg=1,guard=0;
@@ -199,7 +199,7 @@ async function buildHourly(){
     const t=oldest+i*SLOT, dt=new Date(t), h=dt.getUTCHours(), mo=dt.getUTCMonth()+1, da=dt.getUTCDate();
     labels.push(String(h).padStart(2,"0"));
     marks.push((h===0||i===0)?mo+"/"+da:null);
-    heads.push(mo+"/"+da+" "+String(h).padStart(2,"0")+":00–"+String((h+2)%24).padStart(2,"0")+":00");
+    heads.push(mo+"/"+da+" "+String(h).padStart(2,"0")+":00–"+String((h+1)%24).padStart(2,"0")+":00");
   }
   hourly={labels,marks,heads,series:ser,n:N};
 }
@@ -225,9 +225,9 @@ function drawChart(){
   const H=320, m={t:16,r:20,b:34,l:40};
   if(!data){ svg.setAttribute("width",320);svg.setAttribute("height",H);return; }
   const n=data.n, shown=data.shown;
-  const minSp=view==="hour"?48:60;
   const box=svg.parentElement.clientWidth||860;
-  const W=Math.max(box, m.l+m.r+(n-1)*minSp+24);
+  // 시간별(48×1h)은 컨테이너 폭에 맞춰 스크롤 없이 한 화면에, 일자별은 넉넉한 간격
+  const W=view==="hour" ? box : Math.max(box, m.l+m.r+(n-1)*60+24);
   const iw=W-m.l-m.r, ih=H-m.t-m.b;
   svg.setAttribute("width",W); svg.setAttribute("height",H); svg.setAttribute("viewBox","0 0 "+W+" "+H);
   let mx=1; shown.forEach(d=>data.series[d.label].forEach(v=>{if(v>mx)mx=v}));
@@ -238,8 +238,9 @@ function drawChart(){
   for(let t=0;t<=4;t++){const val=Math.round(mx*t/4),y=ys(val);
     const ln=document.createElementNS(NS,"line");ln.setAttribute("x1",m.l);ln.setAttribute("x2",m.l+iw);ln.setAttribute("y1",y);ln.setAttribute("y2",y);g.appendChild(ln);
     const tx=document.createElementNS(NS,"text");tx.setAttribute("x",m.l-8);tx.setAttribute("y",y+4);tx.setAttribute("text-anchor","end");tx.textContent=val;ax.appendChild(tx);}
+  const lstep=Math.max(1,Math.ceil(n/12));   // 라벨은 최대 ~12개만 표시(겹침 방지)
   data.labels.forEach((lab,i)=>{
-    if(i%2===0||i===n-1){const tx=document.createElementNS(NS,"text");tx.setAttribute("x",xs(i));tx.setAttribute("y",H-16);tx.setAttribute("text-anchor","middle");tx.textContent=lab;ax.appendChild(tx);}
+    if(i%lstep===0||i===n-1){const tx=document.createElementNS(NS,"text");tx.setAttribute("x",xs(i));tx.setAttribute("y",H-16);tx.setAttribute("text-anchor","middle");tx.textContent=lab;ax.appendChild(tx);}
     if(data.marks[i]){const tx=document.createElementNS(NS,"text");tx.setAttribute("class","mark");tx.setAttribute("x",xs(i));tx.setAttribute("y",H-3);tx.setAttribute("text-anchor","middle");tx.textContent=data.marks[i];ax.appendChild(tx);}
   });
   svg.appendChild(g);svg.appendChild(ax);
@@ -273,7 +274,6 @@ function drawChart(){
   ov.addEventListener("mousemove",move);ov.addEventListener("mouseleave",leave);
   ov.addEventListener("touchmove",e=>{if(e.touches[0])move(e.touches[0]);},{passive:true});
   ov.addEventListener("touchend",leave);
-  if(view==="hour") svg.parentElement.scrollLeft=W;   // 시간별은 최근 구간이 보이도록 오른쪽 끝으로
 }
 async function loadEvents(){
   const r=await fetch("/admin/api/events?page="+page+"&size="+size); if(!r.ok)return; const d=await r.json();
@@ -332,7 +332,7 @@ document.querySelectorAll(".vt").forEach(b=>b.onclick=async()=>{
   if(view===b.dataset.v)return;
   view=b.dataset.v;
   document.querySelectorAll(".vt").forEach(x=>x.classList.toggle("on",x===b));
-  $("chartmeta").textContent = view==="hour" ? "최근 48시간 · 2시간 단위 · KST" : "최근 14일 · KST";
+  $("chartmeta").textContent = view==="hour" ? "최근 48시간 · 1시간 단위 · KST" : "최근 14일 · KST";
   await refreshChart();
 });
 $("ps").onchange=e=>{size=+e.target.value;page=1;loadEvents();};

@@ -31,10 +31,10 @@ if DATABASE_URL.startswith("postgres://"):
 
 # 4개 PDF ↔ 토큰 ↔ 표시명  (표시명은 관리자 화면에 노출; 자유롭게 수정)
 DOCS = {
-    "18c9cd3f6dbfc98e": {"label": "A", "name": os.getenv("DOC_A_NAME", "기획서 A (13p)")},
-    "efe7e9b636a1c8e4": {"label": "B", "name": os.getenv("DOC_B_NAME", "API 연동 기획서 (35p)")},
-    "b3561b40ba4ae7be": {"label": "C", "name": os.getenv("DOC_C_NAME", "기획서 C (21p)")},
-    "35451019e06bd0d2": {"label": "D", "name": os.getenv("DOC_D_NAME", "드랍쉬핑 서비스기획서 통합본 (203p)")},
+    "18c9cd3f6dbfc98e": {"label": "A", "name": os.getenv("DOC_A_NAME", "기획서(소개페이지)")},
+    "efe7e9b636a1c8e4": {"label": "B", "name": os.getenv("DOC_B_NAME", "기획서(API상세)")},
+    "b3561b40ba4ae7be": {"label": "C", "name": os.getenv("DOC_C_NAME", "기획서(컨텐츠문구)")},
+    "35451019e06bd0d2": {"label": "D", "name": os.getenv("DOC_D_NAME", "기획서(통합본)")},
 }
 
 # ---------------------------------------------------------------- DB

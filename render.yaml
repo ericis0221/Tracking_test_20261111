@@ -1,0 +1,30 @@
+# Render.com 블루프린트 — New > Blueprint 에서 이 저장소를 연결하면 자동 구성됩니다.
+services:
+  - type: web
+    name: document-traffic-monitor
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    envVars:
+      - key: TRACK_DAYS
+        value: "30"
+      - key: TRUST_PROXY
+        value: "true"
+      - key: PUBLIC_DASHBOARD
+        value: "true"               # 로그인 없이 URL만 알면 대시보드 공개
+      - key: SECRET_KEY
+        generateValue: true          # 자동 생성
+      - key: ADMIN_USER
+        value: admin
+      - key: ADMIN_PASSWORD
+        generateValue: true           # 공개 대시보드라 미사용 — 자동 생성(프롬프트 없음)
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dtm-db
+          property: connectionString
+
+databases:
+  - name: dtm-db
+    plan: free

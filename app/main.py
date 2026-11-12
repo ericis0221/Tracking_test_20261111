@@ -25,15 +25,16 @@ SECRET_KEY   = os.getenv("SECRET_KEY", "dev-secret-change-me")
 TRUST_PROXY  = os.getenv("TRUST_PROXY", "true").lower() == "true"   # PaaS 뒤에 있으면 true
 DEDUP_SEC    = int(os.getenv("DEDUP_WINDOW_SEC", "15"))
 PUBLIC_DASHBOARD = os.getenv("PUBLIC_DASHBOARD", "true").lower() == "true"  # true면 /admin 로그인 없이 공개
+DELETE_PASSWORD = os.getenv("DELETE_PASSWORD", "")  # 설정했을 때만 로그 삭제 기능 활성화(비어있으면 삭제 비활성)
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{BASE/'data'/'events.db'}")
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
 
 # 4개 PDF ↔ 토큰 ↔ 표시명  (표시명은 관리자 화면에 노출; 자유롭게 수정)
 DOCS = {
-    "18c9cd3f6dbfc98e": {"label": "A", "name": os.getenv("DOC_A_NAME", "기획서(소개페이지)")},
-    "efe7e9b636a1c8e4": {"label": "B", "name": os.getenv("DOC_B_NAME", "기획서(API상세)")},
-    "b3561b40ba4ae7be": {"label": "C", "name": os.getenv("DOC_C_NAME", "기획서(컨텐츠문구)")},
+    "18c9cd3f6dbfc98e": {"label": "A", "name": os.getenv("DOC_A_NAME", "기획서(홈페이지소개·다운로드)")},
+    "efe7e9b636a1c8e4": {"label": "B", "name": os.getenv("DOC_B_NAME", "기획서(API연동)")},
+    "b3561b40ba4ae7be": {"label": "C", "name": os.getenv("DOC_C_NAME", "기획서(서비스컨텐츠·이용약관)")},
     "35451019e06bd0d2": {"label": "D", "name": os.getenv("DOC_D_NAME", "기획서(통합본)")},
 }
 
@@ -256,6 +257,7 @@ def api_events(request: Request, page: int = 1, size: int = 20, _: str = Depends
              .offset((page-1)*size).limit(size).all())
         name_by = {d["label"]: d["name"] for d in DOCS.values()}
         items = [{
+            "id": e.id,
             "eid": f"EV-{e.id}",
             "doc_label": e.doc_label,
             "doc_name": name_by.get(e.doc_label, e.doc_label),
@@ -267,6 +269,35 @@ def api_events(request: Request, page: int = 1, size: int = 20, _: str = Depends
             "status": "중복" if e.is_dup else "기록됨",
         } for e in q]
         return {"total": total, "page": page, "size": size, "items": items}
+    finally:
+        db.close()
+
+@app.post("/admin/api/events/delete")
+async def api_delete(request: Request, _: str = Depends(require_admin)):
+    """선택한 이벤트 삭제. 공개 대시보드이므로 DELETE_PASSWORD로 보호."""
+    if not DELETE_PASSWORD:
+        return JSONResponse({"ok": False, "error": "삭제 기능이 꺼져 있습니다. 서버 환경변수 DELETE_PASSWORD를 설정하면 켜집니다."}, status_code=403)
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    if str(body.get("password", "")) != DELETE_PASSWORD:
+        db = SessionLocal()
+        try:
+            db.add(AdminAudit(at=dt.datetime.utcnow(), action="delete_denied", ip=client_ip(request), detail="bad password"))
+            db.commit()
+        finally:
+            db.close()
+        return JSONResponse({"ok": False, "error": "삭제 비밀번호가 올바르지 않습니다."}, status_code=403)
+    ids = [int(i) for i in body.get("ids", []) if str(i).isdigit()][:1000]
+    if not ids:
+        return {"ok": True, "deleted": 0}
+    db = SessionLocal()
+    try:
+        cnt = db.query(Event).filter(Event.id.in_(ids)).delete(synchronize_session=False)
+        db.add(AdminAudit(at=dt.datetime.utcnow(), action="delete_events", ip=client_ip(request), detail=f"deleted {cnt}"))
+        db.commit()
+        return {"ok": True, "deleted": int(cnt)}
     finally:
         db.close()
 

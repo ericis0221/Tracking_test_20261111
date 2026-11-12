@@ -64,6 +64,16 @@
   .b-prev{color:var(--warn);background:color-mix(in srgb,var(--warn) 16%,transparent)}
   .st{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:12px}.st .d{width:7px;height:7px;border-radius:50%}
   .st.ok .d{background:var(--ok)}.st.ok{color:var(--ok-ink)}.st.dup .d{background:var(--muted)}.st.dup{color:var(--muted)}
+  /* 선택 삭제 */
+  th.chk,td.chk{width:36px;text-align:center;padding-left:14px;padding-right:6px}
+  input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--accent)}
+  .delbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 16px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--ink-2)}
+  .btn-del{font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);border-radius:8px;padding:7px 13px;cursor:pointer}
+  .btn-del:disabled{opacity:.4;cursor:default}
+  .btn-del.danger{background:#d03b3b;color:#fff;border-color:transparent}
+  .delconfirm{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .delconfirm input{height:32px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:0 10px;font-family:var(--font);font-size:12.5px}
+  .delmsg{font-size:12px;color:var(--muted)}
   .pager{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:13px 16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-2)}
   .pager .right{margin-left:auto;display:flex;gap:7px;align-items:center}
   .pg{min-width:32px;height:32px;padding:0 9px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);border-radius:8px;cursor:pointer;font-variant-numeric:tabular-nums}
@@ -102,7 +112,18 @@
   </div>
   <div class="card">
     <div class="card-hd"><h2>최근 접근 로그</h2><span class="meta" id="logcount">—</span></div>
+    <div class="delbar">
+      <span id="selinfo">선택 0건</span>
+      <button class="btn-del" id="btn-del" disabled>선택 삭제</button>
+      <span class="delconfirm" id="delconfirm" hidden>
+        <input type="password" id="delpw" placeholder="삭제 비밀번호" autocomplete="off">
+        <button class="btn-del danger" id="btn-delok">삭제 확정</button>
+        <button class="btn-del" id="btn-delcancel">취소</button>
+        <span class="delmsg" id="delmsg"></span>
+      </span>
+    </div>
     <div class="table-scroll"><table><thead><tr>
+      <th class="chk"><input type="checkbox" id="chkall" aria-label="페이지 전체 선택"></th>
       <th>Event ID</th><th>Document</th><th>방문자 라벨</th><th>Access Time (KST)</th>
       <th>Observed IP</th><th>User-Agent</th><th>Source</th><th>Status</th>
     </tr></thead><tbody id="tbody"></tbody></table></div>
@@ -114,6 +135,7 @@
 <script>
 const COLORS={A:"var(--s1)",B:"var(--s2)",C:"var(--s3)",D:"var(--s4)"};
 let STATS=null, active={A:1,B:1,C:1,D:1}, page=1, size=20;
+const selected=new Set();
 const $=id=>document.getElementById(id);
 function fmt(n){return (n||0).toLocaleString("en-US")}
 
@@ -193,10 +215,15 @@ async function loadEvents(){
       e.source.includes("프리뷰")?'<span class="badge b-prev">'+e.source+'</span>':'<span class="badge b-unk">'+e.source+'</span>';
     const st=e.status==="중복"?'<span class="st dup"><span class="d"></span>중복</span>':'<span class="st ok"><span class="d"></span>기록됨</span>';
     const tr=document.createElement("tr");
-    tr.innerHTML='<td class="mono">'+e.eid+'</td><td><span class="doc-tag"><span class="sw" style="background:'+COLORS[e.doc_label]+'"></span>'+e.doc_name+'</span></td>'+
+    tr.innerHTML='<td class="chk"><input type="checkbox" class="rowchk" data-id="'+e.id+'"'+(selected.has(e.id)?" checked":"")+'></td>'+
+      '<td class="mono">'+e.eid+'</td><td><span class="doc-tag"><span class="sw" style="background:'+COLORS[e.doc_label]+'"></span>'+e.doc_name+'</span></td>'+
       '<td>'+e.label+'</td><td class="mono">'+e.time+'</td><td class="mono">'+e.ip+'</td><td class="ua">'+(e.ua||'')+'</td><td>'+badge+'</td><td>'+st+'</td>';
     tb.appendChild(tr);
   });
+  tb.querySelectorAll(".rowchk").forEach(cb=>cb.addEventListener("change",()=>{
+    const id=+cb.dataset.id; if(cb.checked)selected.add(id); else selected.delete(id); updateSel();
+  }));
+  updateSel();
   $("logcount").textContent=fmt(d.total)+"건";
   const tp=Math.max(1,Math.ceil(d.total/size)); if(page>tp){page=tp;return loadEvents();}
   const st=(page-1)*size;
@@ -208,8 +235,32 @@ async function loadEvents(){
   for(let p=from;p<=to;p++)pgs.appendChild(mk(String(p),p,{c:p===page}));
   pgs.appendChild(mk("›",page+1,{d:page===tp}));
 }
+function updateSel(){
+  $("selinfo").textContent="선택 "+selected.size+"건";
+  $("btn-del").disabled=selected.size===0;
+  const chks=[...document.querySelectorAll(".rowchk")], onPage=chks.length, ck=chks.filter(c=>c.checked).length;
+  const all=$("chkall"); all.checked=onPage>0&&ck===onPage; all.indeterminate=ck>0&&ck<onPage;
+  if(selected.size===0) hideDel();
+}
+function hideDel(){ $("delconfirm").hidden=true; $("delpw").value=""; $("delmsg").textContent=""; }
+$("chkall").onchange=e=>{
+  document.querySelectorAll(".rowchk").forEach(cb=>{cb.checked=e.target.checked; const id=+cb.dataset.id; e.target.checked?selected.add(id):selected.delete(id);});
+  updateSel();
+};
+$("btn-del").onclick=()=>{ $("delconfirm").hidden=false; $("delmsg").textContent=""; $("delpw").focus(); };
+$("btn-delcancel").onclick=hideDel;
+$("btn-delok").onclick=async()=>{
+  const ids=[...selected], pw=$("delpw").value;
+  $("delmsg").style.color="var(--muted)"; $("delmsg").textContent="삭제 중…";
+  try{
+    const r=await fetch("/admin/api/events/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ids,password:pw})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.ok){ $("delmsg").style.color="#d03b3b"; $("delmsg").textContent=(j&&j.error)||"삭제 실패"; return; }
+    selected.clear(); hideDel(); await loadStats(); await loadEvents();
+  }catch(err){ $("delmsg").style.color="#d03b3b"; $("delmsg").textContent="네트워크 오류"; }
+};
 $("ps").onchange=e=>{size=+e.target.value;page=1;loadEvents();};
 $("theme").onclick=()=>{const c=document.documentElement.getAttribute("data-theme");const dark=c?c==="dark":matchMedia("(prefers-color-scheme:dark)").matches;document.documentElement.setAttribute("data-theme",dark?"light":"dark");if(STATS)drawChart();};
-let cd=15;setInterval(()=>{cd--;if(cd<=0){cd=15;loadStats();loadEvents();}$("cd").textContent=cd;},1000);
+let cd=15;setInterval(()=>{cd--;if(cd<=0){cd=15; if(selected.size===0){loadStats();loadEvents();}}$("cd").textContent=cd;},1000);
 loadStats();loadEvents();
 </script></body></html>

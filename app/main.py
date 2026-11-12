@@ -128,15 +128,25 @@ def _geo_batch(ips):
     except Exception:
         return {}
 
+def _save_geo(db, **kw):
+    """IP별로 개별 커밋 — 동시 요청 간 UNIQUE 충돌은 무시(이미 다른 요청이 저장한 것)."""
+    try:
+        db.merge(GeoCache(**kw)); db.commit()
+    except Exception:
+        db.rollback()
+
 def ensure_geo(db, ips, cap=50):
     """미해석 IP의 지역을 조회해 캐시에 저장. 사설/로컬은 로컬 표기, 조회 실패는 저장 안 함(다음에 재시도)."""
     todo = []
     for ip in {i for i in ips if i and i != "-"}:
-        if db.get(GeoCache, ip) is not None:
-            continue
+        try:
+            if db.get(GeoCache, ip) is not None:
+                continue
+        except Exception:
+            db.rollback(); continue
         if _is_private_ip(ip):
-            db.merge(GeoCache(ip=ip, country="—", country_code="", region="", city="사설/로컬",
-                              org="private", resolved_at=dt.datetime.utcnow()))
+            _save_geo(db, ip=ip, country="—", country_code="", region="", city="사설/로컬",
+                      org="private", resolved_at=dt.datetime.utcnow())
         else:
             todo.append(ip)
     todo = todo[:cap]
@@ -145,11 +155,10 @@ def ensure_geo(db, ips, cap=50):
         for ip in todo:
             o = res.get(ip)
             if o and o.get("status") == "success":
-                db.merge(GeoCache(ip=ip, country=o.get("country") or "", country_code=o.get("countryCode") or "",
-                                  region=o.get("regionName") or "", city=o.get("city") or "",
-                                  org=(o.get("org") or o.get("isp") or o.get("as") or ""),
-                                  resolved_at=dt.datetime.utcnow()))
-    db.commit()
+                _save_geo(db, ip=ip, country=o.get("country") or "", country_code=o.get("countryCode") or "",
+                          region=o.get("regionName") or "", city=o.get("city") or "",
+                          org=(o.get("org") or o.get("isp") or o.get("as") or ""),
+                          resolved_at=dt.datetime.utcnow())
 
 def issue_date() -> dt.datetime:
     if ISSUE_DATE:

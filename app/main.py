@@ -5,7 +5,7 @@ Document Traffic Monitor — 수집 서버 + 관리자 대시보드
 - 30일(기본) 경과 토큰은 기록을 멈추고 미끼 페이지만 반환.
 관리자 활동과 PDF 추적 이벤트는 테이블/집계를 분리한다.
 """
-import os, hashlib, datetime as dt, json
+import os, hashlib, datetime as dt, json, ipaddress, urllib.request
 from pathlib import Path
 from fastapi import FastAPI, Request, Response, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
@@ -63,6 +63,16 @@ class AdminAudit(Base):                   # 관리자 활동 (집계 제외)
     ip = Column(String(64))
     detail = Column(String(256))
 
+class GeoCache(Base):                      # IP → 접속 지역(Geo) 캐시 (ip-api.com 무료 조회 결과)
+    __tablename__ = "ip_geo"
+    ip = Column(String(64), primary_key=True)
+    country = Column(String(64))
+    country_code = Column(String(4))
+    region = Column(String(80))
+    city = Column(String(80))
+    org = Column(String(160))
+    resolved_at = Column(DateTime)
+
 if DATABASE_URL.startswith("sqlite"):
     (BASE / "data").mkdir(exist_ok=True)
 Base.metadata.create_all(engine)
@@ -100,6 +110,46 @@ def mask_ip(ip: str) -> str:
     parts = ip.split(".")
     if len(parts) == 4: return f"{parts[0]}.{parts[1]}.xxx.xxx"
     return ip[:6] + "…" if len(ip) > 6 else ip
+
+# ---------------- 접속 지역(Geo) 조회: ip-api.com 무료, 결과는 ip_geo 캐시에 저장
+def _is_private_ip(ip: str) -> bool:
+    try:
+        return ipaddress.ip_address(ip.split("%")[0]).is_global is False
+    except Exception:
+        return True
+
+def _geo_batch(ips):
+    try:
+        url = "http://ip-api.com/batch?fields=status,country,countryCode,regionName,city,org,isp,as,query"
+        req = urllib.request.Request(url, data=json.dumps(ips).encode(),
+                                     headers={"Content-Type": "application/json"}, method="POST")
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            return {o.get("query"): o for o in json.loads(resp.read().decode())}
+    except Exception:
+        return {}
+
+def ensure_geo(db, ips, cap=50):
+    """미해석 IP의 지역을 조회해 캐시에 저장. 사설/로컬은 로컬 표기, 조회 실패는 저장 안 함(다음에 재시도)."""
+    todo = []
+    for ip in {i for i in ips if i and i != "-"}:
+        if db.get(GeoCache, ip) is not None:
+            continue
+        if _is_private_ip(ip):
+            db.merge(GeoCache(ip=ip, country="—", country_code="", region="", city="사설/로컬",
+                              org="private", resolved_at=dt.datetime.utcnow()))
+        else:
+            todo.append(ip)
+    todo = todo[:cap]
+    if todo:
+        res = _geo_batch(todo)
+        for ip in todo:
+            o = res.get(ip)
+            if o and o.get("status") == "success":
+                db.merge(GeoCache(ip=ip, country=o.get("country") or "", country_code=o.get("countryCode") or "",
+                                  region=o.get("regionName") or "", city=o.get("city") or "",
+                                  org=(o.get("org") or o.get("isp") or o.get("as") or ""),
+                                  resolved_at=dt.datetime.utcnow()))
+    db.commit()
 
 def issue_date() -> dt.datetime:
     if ISSUE_DATE:
@@ -237,10 +287,25 @@ def api_stats(request: Request, _: str = Depends(require_admin)):
         last_kst = (last + dt.timedelta(hours=9)).strftime("%Y-%m-%d %H:%M") if last else "—"
         docs_meta = [{"label": d["label"], "name": d["name"], "count": per_doc.get(d["label"], 0)}
                      for d in DOCS.values()]
+        # 접속 지역(Geo): 최근 이벤트 IP 해석 후 국가/네트워크(ORG) 집계
+        recent_ips = [r[0] for r in db.query(Event.observed_ip)
+                      .order_by(Event.received_at.desc()).limit(300).all()]
+        ensure_geo(db, recent_ips, cap=50)
+        cc = (db.query(GeoCache.country_code, GeoCache.country, func.count(Event.id))
+              .join(Event, Event.observed_ip == GeoCache.ip)
+              .filter(GeoCache.country != "", GeoCache.country != "—")
+              .group_by(GeoCache.country_code, GeoCache.country).all())
+        top_countries = sorted([{"code": c or "", "name": n or "?", "count": int(x)} for c, n, x in cc],
+                               key=lambda z: -z["count"])[:8]
+        og = (db.query(GeoCache.org, func.count(Event.id))
+              .join(Event, Event.observed_ip == GeoCache.ip)
+              .filter(GeoCache.org != "", GeoCache.org != "private")
+              .group_by(GeoCache.org).all())
+        top_orgs = sorted([{"name": o, "count": int(x)} for o, x in og], key=lambda z: -z["count"])[:8]
         return {"total": total, "today": today_cnt, "last": last_kst,
                 "tracked": len(DOCS), "day_keys": day_keys,
                 "series": {l: [series[l][k] for k in day_keys] for l in series},
-                "docs": docs_meta,
+                "docs": docs_meta, "top_countries": top_countries, "top_orgs": top_orgs,
                 "expires_kst": (expires_at() + dt.timedelta(hours=9)).strftime("%Y-%m-%d"),
                 "expired": is_expired()}
     finally:
@@ -256,6 +321,10 @@ def api_events(request: Request, page: int = 1, size: int = 20, _: str = Depends
         q = (db.query(Event).order_by(Event.received_at.desc())
              .offset((page-1)*size).limit(size).all())
         name_by = {d["label"]: d["name"] for d in DOCS.values()}
+        ensure_geo(db, [e.observed_ip for e in q])
+        gmap = {g.ip: g for g in db.query(GeoCache).filter(
+            GeoCache.ip.in_([e.observed_ip for e in q if e.observed_ip])).all()}
+        def _g(e): return gmap.get(e.observed_ip)
         items = [{
             "id": e.id,
             "eid": f"EV-{e.id}",
@@ -264,6 +333,11 @@ def api_events(request: Request, page: int = 1, size: int = 20, _: str = Depends
             "label": visitor_label(e.observed_ip, e.user_agent),
             "time": (e.received_at + dt.timedelta(hours=9)).strftime("%Y-%m-%d %H:%M:%S"),
             "ip": mask_ip(e.observed_ip or "-"),
+            "country": (_g(e).country if _g(e) else ""),
+            "country_code": (_g(e).country_code if _g(e) else ""),
+            "region": (_g(e).region if _g(e) else ""),
+            "city": (_g(e).city if _g(e) else ""),
+            "org": (_g(e).org if _g(e) else ""),
             "ua": e.user_agent or "",
             "source": e.source_class,
             "status": "중복" if e.is_dup else "기록됨",

@@ -1,7 +1,7 @@
 # Render.com 블루프린트 — New > Blueprint 에서 이 저장소를 연결하면 자동 구성됩니다.
 services:
   - type: web
-    name: document-traffic-monitor
+    name: dropshipping-spec-api
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt

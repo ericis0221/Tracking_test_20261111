@@ -90,7 +90,7 @@
   .ticker .track{white-space:nowrap;animation:marq 38s linear infinite;color:var(--ink2);padding-left:100%}
   .ticker .track b{color:var(--cy)} .ticker .track .r{color:var(--s2)} .ticker .track .g{color:var(--ok)}
   /* ---------- grid ---------- */
-  .grid{display:grid;grid-template-columns:300px minmax(0,1fr) 330px;gap:16px;padding:20px 24px 40px;max-width:1720px;margin:0 auto;position:relative}
+  .grid{display:grid;grid-template-columns:300px minmax(0,1fr) 330px;gap:16px;padding:20px 24px 40px;max-width:1960px;margin:0 auto;position:relative}
   .col{display:flex;flex-direction:column;gap:16px;min-width:0}
   .panel{background:var(--panel);border-radius:var(--r);overflow:hidden;position:relative;box-shadow:var(--shadow)}
   .ph{display:flex;align-items:center;gap:8px;padding:20px 22px 6px}
@@ -124,8 +124,8 @@
   .legend-mini .r{display:flex;align-items:center;gap:8px;color:var(--ink2)} .legend-mini .sw{width:8px;height:8px;border-radius:50%}
   .legend-mini .r b{margin-left:auto;color:var(--ink);font-weight:700}
   /* feed */
-  .feed{max-height:290px;overflow-y:auto;display:flex;flex-direction:column}
-  .feed .row{display:flex;gap:8px;align-items:center;padding:10px 2px;border-bottom:1px solid var(--fill);font-size:12px;white-space:nowrap;overflow:hidden}
+  .feed{max-height:420px;overflow-y:auto;display:flex;flex-direction:column;padding:0 14px 10px}
+  .feed .row{flex:none;display:flex;gap:8px;align-items:center;padding:12px 2px;border-bottom:1px solid var(--fill);font-size:12px;white-space:nowrap;overflow:hidden}
   .feed .row.new{animation:rowin .5s ease, flash 1.2s ease}
   .feed .tm{color:var(--mut);flex:none} .feed .op{color:var(--ink);font-weight:600;flex:none} .feed .ip{color:var(--ink2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis} .feed .tag2{margin-left:auto;flex:none}
   .pill2{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px}
@@ -184,16 +184,16 @@
   .tt .row{display:flex;align-items:center;gap:8px;margin:4px 0}.tt .row .sw{width:8px;height:8px;border-radius:50%}
   .tt .row .nm{color:var(--ink2);white-space:nowrap}.tt .row .vv{margin-left:auto;padding-left:12px;font-weight:700}
   /* table */
-  .table-scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px;min-width:880px}
-  thead th{text-align:left;font-size:12.5px;color:var(--mut);font-weight:500;background:var(--panel);padding:12px 14px;border-bottom:1px solid var(--bd);white-space:nowrap}
-  td{padding:14px;border-bottom:1px solid var(--fill);white-space:nowrap;vertical-align:top;color:var(--ink)}tbody tr{transition:background .12s}tbody tr:hover{background:var(--fill2)}
-  td.ua{color:var(--mut);font-size:12px;white-space:normal;word-break:break-all;max-width:320px;min-width:200px;line-height:1.45}
+  .table-scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{text-align:left;font-size:12.5px;color:var(--mut);font-weight:500;background:var(--panel);padding:12px 10px;border-bottom:1px solid var(--bd);white-space:nowrap}
+  td{padding:14px 10px;border-bottom:1px solid var(--fill);white-space:nowrap;vertical-align:top;color:var(--ink)}tbody tr{transition:background .12s}tbody tr:hover{background:var(--fill2)}
+  td.ua{color:var(--mut);font-size:12px;white-space:normal;word-break:break-all;max-width:340px;min-width:130px;line-height:1.45}
   .doc-tag{display:inline-flex;align-items:center;gap:7px;font-weight:600}.doc-tag .sw{width:8px;height:8px;border-radius:50%}
   .badge{font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px;white-space:nowrap}
   .b-ai{color:var(--cy);background:var(--tBlue)}.b-unk{color:var(--ink2);background:var(--fill)}.b-prev{color:var(--warn);background:var(--tOrange)}
   .st{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:13px}.st .d{width:6px;height:6px;border-radius:50%}
   .st.ok .d{background:var(--ok)}.st.ok{color:var(--ok)}.st.dup .d{background:var(--bd2)}.st.dup{color:var(--mut)}
-  th.chk,td.chk{width:40px;text-align:center}
+  th.chk,td.chk{width:36px;text-align:center;padding-left:14px;padding-right:4px}
   input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--cy)}
   .delbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 22px 14px;font-size:13px;color:var(--ink2)}
   .btn-del{font:inherit;font-size:13px;font-weight:600;border:0;background:var(--fill);color:var(--ink2);border-radius:10px;padding:8px 14px;cursor:pointer;transition:background .15s}
@@ -218,7 +218,11 @@
   @keyframes flash{0%{background:var(--tBlue)}100%{background:transparent}}
   @keyframes pingk{0%{opacity:.6;r:1}100%{opacity:0;r:10}}
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-  @media (max-width:1180px){.grid{grid-template-columns:1fr}.col.center{order:-1}}
+  @media (max-width:1600px){.grid{grid-template-columns:272px minmax(0,1fr) 300px}
+    thead th,tbody td:nth-child(3),tbody td:nth-child(5){white-space:normal}tbody td:nth-child(5){min-width:84px}td,thead th{padding-left:8px;padding-right:8px}td.ua{min-width:110px}}
+  @media (max-width:1480px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.col.center{grid-column:1/-1;order:-1}}
+  @media (max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+  @media (max-width:860px){table{min-width:820px}}
   @media (max-width:640px){.grid{padding:16px}.topbar{padding:10px 16px}.ticker .tag{padding-left:16px}.kpis{grid-template-columns:repeat(2,1fr)}.leds{display:none}}
   /* ---------- IP 확인 (더미) 버튼 + 모달 ---------- */
   .ipbtn{display:inline-flex;align-items:center;gap:6px;margin-left:10px;font:inherit;font-size:13px;font-weight:600;border:0;border-radius:10px;padding:8px 13px;background:var(--tBlue);color:var(--cy);cursor:pointer;transition:filter .15s}
@@ -235,6 +239,10 @@
   .modal label{display:block;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:8px}
   .modal input{width:100%;height:48px;border:0;border-radius:12px;background:var(--fill);color:var(--ink);padding:0 14px;font:inherit;font-size:15px;outline:none}
   .modal input:focus{box-shadow:0 0 0 2px var(--cy) inset;background:var(--panel)}
+  .modal input.err,.modal input.err:focus{box-shadow:0 0 0 2px var(--crit) inset}
+  .modal .merr{margin:8px 2px 0;font-size:13px;font-weight:500;color:var(--crit);min-height:0}
+  .modal .shake{animation:shake .35s ease}
+  @keyframes shake{20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
   .modal .mbtns{display:flex;gap:8px;margin-top:20px}
   .modal .mbtns button{flex:1;height:50px;border:0;border-radius:14px;font:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:filter .15s}
   .modal .mbtns button:hover{filter:brightness(.95)}
@@ -383,7 +391,8 @@
     <h4 id="ipm-title">IP 확인</h4>
     <p>열람 기록의 IP 상세 정보를 확인하려면<br>관리자 비밀번호를 입력해 주세요.</p>
     <label for="ipm-pw">비밀번호</label>
-    <input type="password" id="ipm-pw" placeholder="비밀번호 입력" autocomplete="off">
+    <input type="password" id="ipm-pw" placeholder="비밀번호 입력" autocomplete="off" aria-describedby="ipm-err">
+    <p class="merr" id="ipm-err" role="alert" hidden></p>
     <div class="mbtns"><button class="m-cancel" id="ipm-cancel" type="button">취소</button><button class="m-ok" id="ipm-ok" type="button">확인</button></div>
   </div>
 </div>
@@ -564,15 +573,23 @@ setInterval(()=>{document.querySelectorAll(".big,.kpi .v,.gauge .val").forEach(e
   });
 })();
 </script>
-<script>/* IP 확인 모달 — 더미 UI. 입력값은 전송·저장하지 않고 어떤 버튼이든 닫기만 함 */
+<script>/* IP 확인 모달 — 더미 UI. 입력값은 전송·저장하지 않으며, 확인 시 항상 '비밀번호 오류'를 표시 */
 (function(){
-  var m=document.getElementById("ipmodal"),pw=document.getElementById("ipm-pw"),last=null;
-  function open(){last=document.activeElement;pw.value="";m.hidden=false;setTimeout(function(){pw.focus();},30);}
-  function close(){pw.value="";m.hidden=true;if(last&&last.focus)last.focus();}
+  var m=document.getElementById("ipmodal"),pw=document.getElementById("ipm-pw"),er=document.getElementById("ipm-err"),last=null;
+  function clearErr(){er.hidden=true;er.textContent="";pw.classList.remove("err");}
+  function open(){last=document.activeElement;pw.value="";clearErr();m.hidden=false;setTimeout(function(){pw.focus();},30);}
+  function close(){pw.value="";clearErr();m.hidden=true;if(last&&last.focus)last.focus();}
+  function submit(){
+    er.textContent=pw.value?"비밀번호가 일치하지 않습니다. 다시 확인해 주세요.":"비밀번호를 입력해 주세요.";
+    er.hidden=false;pw.classList.add("err");pw.value="";
+    pw.classList.remove("shake");void pw.offsetWidth;pw.classList.add("shake");pw.focus();}
   document.getElementById("ipbtn").addEventListener("click",open);
-  ["ipm-x","ipm-cancel","ipm-ok"].forEach(function(id){document.getElementById(id).addEventListener("click",close);});
+  document.getElementById("ipm-x").addEventListener("click",close);
+  document.getElementById("ipm-cancel").addEventListener("click",close);
+  document.getElementById("ipm-ok").addEventListener("click",submit);
+  pw.addEventListener("input",function(){if(!er.hidden&&pw.value)clearErr();});
+  pw.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();submit();}});
   m.addEventListener("click",function(e){if(e.target===m)close();});
-  pw.addEventListener("keydown",function(e){if(e.key==="Enter")close();});
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!m.hidden)close();});
 })();
 </script>
